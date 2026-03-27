@@ -5,10 +5,9 @@ output: html_document
 
 ```{r carga-y-preparacion}
 # 1. Cargar los datos originales
-# Asegurate de que la ruta "datos/..." sea la correcta en tu computadora
-load("datos/listings_modificado.RData")
+load("listings_modificado.RData")
 
-# 2. Preparar las variables categóricas (vital para Naive Bayes)
+# 2. Lista ideal de variables categóricas
 categoricas <- c(
   "room_type",
   "property_type",
@@ -18,7 +17,12 @@ categoricas <- c(
   "instant_bookable",
   "bathroom_type"
 )
-listings[categoricas] <- lapply(listings[categoricas], as.factor)
+
+# 3. Filtrar solo las que realmente existen en el dataset actual
+columnas_existentes <- intersect(categoricas, names(listings))
+
+# 4. Convertir a factor solo las que existan
+listings[columnas_existentes] <- lapply(listings[columnas_existentes], as.factor)
 ```
 
 ```{r}
@@ -36,8 +40,7 @@ test <- listings[-train_data, ]
 library(e1071)
 library(caret)
 
-# === PUNTO 1: Elaborar modelo de "regresión" con Naive Bayes ===
-# Entrenamos el modelo usando el conjunto 'train' y 'price' como variable respuesta.
+#  Modelo de regresión 
 modelo_nb_reg <- naiveBayes(
   price ~ accommodates + bathrooms_num + bedrooms + beds +
     host_response_rate + host_acceptance_rate +
@@ -53,7 +56,7 @@ modelo_nb_reg <- naiveBayes(
 pred_nb_factor <- predict(modelo_nb_reg, newdata = test)
 pred_nb_reg <- as.numeric(as.character(pred_nb_factor))
 
-# === PUNTO 2: Análisis de resultados (Métricas) ===
+# Análisis de resultados
 # Calculamos las métricas correctas para evaluar una regresión
 rmse_nb <- RMSE(pred_nb_reg, test$price, na.rm = TRUE)
 mae_nb  <- MAE(pred_nb_reg, test$price, na.rm = TRUE)
