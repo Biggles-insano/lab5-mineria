@@ -171,3 +171,59 @@ cat("Diferencia:            ", round((accuracy_train - accuracy_test) * 100, 2),
 cat("Kappa Entrenamiento:   ", round(cm_train$overall["Kappa"], 4), "\n")
 cat("Kappa Prueba:          ", round(cm$overall["Kappa"], 4), "\n")
 ```
+
+```{r punto-8-comparacion-clasificacion}
+
+# Definir los límites basados en los terciles del precio
+p33 <- quantile(listings$price, 0.33, na.rm = TRUE)
+p66 <- quantile(listings$price, 0.66, na.rm = TRUE)
+
+# Crear la variable 'price_category' en todo el dataset original
+listings$price_category <- cut(
+  listings$price,
+  breaks = c(-Inf, p33, p66, Inf),
+  labels = c("Economica", "Intermedia", "Cara"),
+  right = TRUE
+)
+
+# Propagar la variable a los conjuntos train y test
+train$price_category <- listings$price_category[as.numeric(rownames(train))]
+test$price_category <- listings$price_category[as.numeric(rownames(test))]
+
+# Verificar que se creó correctamente quitando NAs
+train <- train[!is.na(train$price_category), ]
+test <- test[!is.na(test$price_category), ]
+
+# Punto 8: Modelo de Clasificación con Validación Cruzada 
+
+# Aseguramos la librería para que no tire error con trainControl
+library(caret) 
+
+# 1. Configurar la validación cruzada (10-fold CV)
+control_cv <- trainControl(method = "cv", number = 10)
+
+# 2. Entrenar el modelo Naive Bayes con CV
+set.seed(123)
+modelo_nb_cv <- train(
+  price_category ~ accommodates + bathrooms_num + bedrooms + beds +
+    host_response_rate + host_acceptance_rate +
+    calculated_host_listings_count + number_of_reviews +
+    reviews_per_month + review_scores_rating +
+    minimum_nights + availability_365 +
+    room_type + host_is_superhost + instant_bookable + bathroom_type,
+  data = train,
+  method = "naive_bayes", 
+  trControl = control_cv
+)
+
+# 3. Predecir usando el conjunto de prueba
+pred_nb_cv <- predict(modelo_nb_cv, newdata = test)
+
+# 4. Generar la matriz de confusión para ver la eficiencia
+conf_matrix_cv_nb <- confusionMatrix(pred_nb_cv, test$price_category)
+
+# Mostrar la comparación rápida (Usando 'cm' del punto 6)
+cat("COMPARACIÓN: Modelo Base vs Validación Cruzada \n")
+cat("Accuracy Modelo Base (Punto 6):", cm$overall["Accuracy"], "\n")
+cat("Accuracy Modelo CV   (Punto 8):", conf_matrix_cv_nb$overall["Accuracy"], "\n")
+``` 
