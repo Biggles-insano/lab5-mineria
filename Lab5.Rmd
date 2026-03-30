@@ -227,3 +227,14 @@ cat("COMPARACIÓN: Modelo Base vs Validación Cruzada \n")
 cat("Accuracy Modelo Base (Punto 6):", cm$overall["Accuracy"], "\n")
 cat("Accuracy Modelo CV   (Punto 8):", conf_matrix_cv_nb$overall["Accuracy"], "\n")
 ``` 
+
+```{r punto 9-prueba de hiperparámetros}
+modeloNB_base <- naiveBayes(price_category ~ ., data = train)
+
+pred_base <- predict(modeloNB_base, newdata = test)
+
+caret::confusionMatrix(pred_base, test$price_category)
+```
+
+
+
